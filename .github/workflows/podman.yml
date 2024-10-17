@@ -1,0 +1,33 @@
+name: Build Container with Podman
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    steps:
+     
+      - name: Harden Runner
+        uses: step-security/harden-runner@v2
+        with:
+          egress-policy: audit
+          allowed-endpoints: >
+            auth.docker.io:443
+            deb.debian.org:80
+            github.com:443
+            production.cloudflare.docker.com:443
+            registry-1.docker.io:443
+
+      - run: |
+          sudo resolvectl default-route eth0 no
+          sudo systemctl restart systemd-resolved
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - run: cat /run/systemd/resolve/resolv.conf
+      - name: Build Container Image with Podman
+        run: |
+          podman build --log-level=debug -t my-app:latest .
+
+     

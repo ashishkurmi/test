@@ -1,0 +1,32 @@
+# .github/workflows/on_workflow_completion.yml
+name: Run on Pull Request Workflow Completion
+
+on:
+  workflow_run:
+    workflows: ["Deploy to trigger workflows"]
+    types:
+      - completed
+
+jobs:
+  run_after_completion:
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' && !github.event.workflow_run.head_repository.fork }}
+    #if: ${{ github.event.workflow_run.conclusion == 'success' && !github.event.workflow_run.head_repository.fork && (github.event.workflow_run.event == 'push' || github.event.workflow_run.event == 'workflow_run') }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+        
+      - name: Post-workflow step
+        run: echo "This runs after the pull request workflow completes successfully."
+
+      - name: Tag Code and push
+        run: |
+          git tag --force --message "Tagging commit"
+          git push --set-upstream origin --tags
+
+      - name: Print github.event.workflow_run properties
+        run: |
+          echo "Printing github.event.workflow_run properties:"
+          echo "${{ toJson(github.event.workflow_run) }}"

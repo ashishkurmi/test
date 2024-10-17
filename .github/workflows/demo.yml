@@ -1,0 +1,43 @@
+name: Harden runnerv2
+
+on: [issues, workflow_dispatch]
+
+jobs:
+  detect-noop:
+    runs-on: ubuntu-22.04
+    outputs:
+      noop: ${{ steps.noop.outputs.should_skip }}
+    steps:
+      - uses: step-security/harden-runner@v2
+        with:
+          egress-policy: audit
+      - name: Detect No-op Changes
+        id: noop
+        uses: fkirc/skip-duplicate-actions@f75f66ce1886f00957d99748a42c724f4330bdcf # v5.3.1
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          paths_ignore: '["**.md", "**.png", "**.jpg"]'
+          concurrent_skipping: false
+  greeting:
+    
+    runs-on: ubuntu-8-core-latest
+    
+    steps:
+    - name: Harden Runner
+      uses: step-security/harden-runner@55d479fb1c5bcad5a4f9099a5d9f37c8857b2845 # rc
+      with:
+        policy: policy1
+
+    - uses: actions/first-interaction@1d8459ca65b335265f1285568221e229d45a995e # v1.1.1
+      with:
+        repo-token: ${{ secrets.GITHUB_TOKEN }}
+        issue-message: "Message that will be displayed on users' first issue"
+        pr-message: "Message that will be displayed on users' first pull request"
+
+    - run: curl -X GET https://auth.docker.io
+    - run: sleep 40
+    - run: curl -X GET https://auth.docker.io
+    - run: sleep 40
+    - run: curl -X GET https://auth.docker.io
+    - run: sleep 40
+    - run: curl -X GET https://google.com

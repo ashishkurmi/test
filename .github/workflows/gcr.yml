@@ -1,0 +1,46 @@
+name: CD
+
+on:
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: "read"
+      id-token: "write"
+
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@v2
+        with:
+          egress-policy: audit
+
+      - uses: actions/checkout@v2
+
+      - id: "auth"
+        name: "Authenticate to Google Cloud"
+        uses: "google-github-actions/auth@v2"
+        with:
+          credentials_json: '${{ secrets.GOOGLE_CREDENTIALS }}'
+
+      - name: Add credentials file to git exclude
+        run: |
+          credentials_file_path="${{ steps.auth.outputs.credentials_file_path }}"
+          # Convert the absolute path to a relative path
+          relative_path="${credentials_file_path#$(pwd)/}"
+          echo "$relative_path" >> .git/info/exclude
+          cat .git/info/exclude
+
+      - name: Verify credentials file is excluded
+        run: git status
+
+      - name: Configure Docker
+        run: gcloud auth configure-docker --quiet
+
+      - name: Build Docker image
+        run: docker build . -t gcr.io/$GCLOUD_PROJECT/accessmanagerv3:$GITHUB_SHA
+
+      - name: Push Docker image
+        run: docker push gcr.io/$GCLOUD_PROJECT/accessmanagerv3:$GITHUB_SHA
