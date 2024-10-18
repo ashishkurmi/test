@@ -1,4 +1,3 @@
-l
 name: Run on Pull Request Workflow Completion
 
 on:
