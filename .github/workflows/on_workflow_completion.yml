@@ -1,4 +1,4 @@
-# .github/workflows/on_workflow_completion.yml
+l
 name: Run on Pull Request Workflow Completion
 
 on:
@@ -11,7 +11,6 @@ jobs:
   run_after_completion:
     runs-on: ubuntu-latest
     if: ${{ github.event.workflow_run.conclusion == 'success' && !github.event.workflow_run.head_repository.fork }}
-    #if: ${{ github.event.workflow_run.conclusion == 'success' && !github.event.workflow_run.head_repository.fork && (github.event.workflow_run.event == 'push' || github.event.workflow_run.event == 'workflow_run') }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -22,8 +21,15 @@ jobs:
         run: echo "This runs after the pull request workflow completes successfully."
 
       - name: Tag Code and push
+        env:
+          XTS_CANDIDATE_TAG: "xts-candidate"
         run: |
-          git tag --force --message "Tagging commit"
+          # Configure Git user
+          git config user.name "GitHub Action"
+          git config user.email "action@github.com"
+          
+          # Create or update the XTS_CANDIDATE_TAG and push it
+          git tag --force ${XTS_CANDIDATE_TAG} --message "Tagging commit for XTS promotion"
           git push --set-upstream origin --tags
 
       - name: Print github.event.workflow_run properties
